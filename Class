@@ -1,11 +1,8 @@
 class Gasto:
     def __init__(self, valor, descricao, categoria, data):
         self.valor = valor
-
         self.descricao = descricao
-
         self.categoria = categoria
-
         self.data = data
 
 
@@ -13,6 +10,11 @@ class GastoParcelado(Gasto):
     def __init__(self, valor, descricao, parcelas, categoria, data):
         super().__init__(valor, descricao,categoria,data)
         self.parcelas = parcelas
+
+class GastoExtra(Gasto):
+    def __init__(self, valor, descricao, categoria, data):
+        super().__init__(valor, descricao, categoria, data)
+        print("Gasto fora do planejamento")
 
 
 class Categoria:
@@ -51,27 +53,21 @@ class GerenciadorDeGastos:
 
 
     def editar_gasto(self, indice, novo_valor, nova_descricao):
-      
-self.gastos[indice].valor = novo_valor
-
-self.gastos[indice].descricao = nova_descricao
+        self.gastos[indice].valor = novo_valor
+        self.gastos[indice].descricao = nova_descricao
 
     def remover_gasto(self, gasto):
-
-self.gastos.remove(gasto)
+        self.gastos.remove(gasto)
 
     def buscar_gasto(self, nome):
         for g in self.gastos:
-
-if nome in g.descricao:
-print(g.descricao, g.valor)
+            if nome in g.descricao:
+                print(g.descricao, g.valor)
 
     def filtrar_por_data(self, data):
-for g in self.gastos:
+        for g in self.gastos:
+            if g.data == data:
+                print(g.descricao, g.valor)
 
-if g.data == data:
-
-print(g.descricao, g.valor)
-
- def ordenar_gastos(self):
+    def ordenar_gastos(self):
         self.gastos.sort(key=lambda g: g.valor)
