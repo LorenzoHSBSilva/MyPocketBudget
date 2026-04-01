@@ -14,7 +14,6 @@ class GastoParcelado(Gasto):
 class GastoExtra(Gasto):
     def __init__(self, valor, descricao, categoria, data):
         super().__init__(valor, descricao, categoria, data)
-        print("Gasto fora do planejamento")
 
 
 class Categoria:
