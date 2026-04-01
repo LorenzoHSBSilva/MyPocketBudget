@@ -15,7 +15,7 @@ class Categoria:
 class GerenciadorDeGastos:
     def __init__(self):
         self.gastos = []
-        self.gastos[indice].descricao = nova_descricao
+
     def adicionar_gasto(self, gasto):
         self.gastos.append(gasto)
 
@@ -25,3 +25,4 @@ class GerenciadorDeGastos:
 
     def editar_gasto(self, indice, novo_valor, nova_descricao):
         self.gastos[indice].valor = novo_valor
+        self.gastos[indice].descricao = nova_descricao
