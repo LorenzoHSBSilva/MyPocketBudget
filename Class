@@ -1,13 +1,18 @@
 class Gasto:
     def __init__(self, valor, descricao, categoria, data):
-
-    self.valor = valor
+        self.valor = valor
 
         self.descricao = descricao
 
- self.categoria = categoria
+        self.categoria = categoria
 
- self.data = data
+        self.data = data
+
+
+class GastoParcelado(Gasto):
+    def __init__(self, valor, descricao, parcelas, categoria, data):
+        super().__init__(valor, descricao,categoria,data)
+        self.parcelas = parcelas
 
 
 class Categoria:
@@ -30,6 +35,7 @@ class Categoria:
             print("Limite excedido:", self.nome)
 
 
+
 class GerenciadorDeGastos:
     def __init__(self):
         self.gastos = []
@@ -37,26 +43,35 @@ class GerenciadorDeGastos:
     def adicionar_gasto(self, gasto):
         self.gastos.append(gasto)
         gasto.categoria.adicionar_gasto(gasto)
+        gasto.categoria.verificar_limite()
 
     def listar_gastos(self):
         for g in self.gastos:
             print(g.descricao, "-", g.valor)
 
+
     def editar_gasto(self, indice, novo_valor, nova_descricao):
-        self.gastos[indice].valor = novo_valor
-        self.gastos[indice].descricao = nova_descricao
+      
+self.gastos[indice].valor = novo_valor
+
+self.gastos[indice].descricao = nova_descricao
 
     def remover_gasto(self, gasto):
-        self.gastos.remove(gasto)
 
-def buscar_gasto(self, nome):
- for g in self.gastos:
-   if nome in g.descricao:
-                print(g.descricao, g.valor)
+self.gastos.remove(gasto)
 
-def filtrar_por_data(self, data):
+    def buscar_gasto(self, nome):
         for g in self.gastos:
-            if g.data == data:
-                print(g.descricao, g.valor)
-def ordenar_gastos(self):
+
+if nome in g.descricao:
+print(g.descricao, g.valor)
+
+    def filtrar_por_data(self, data):
+for g in self.gastos:
+
+if g.data == data:
+
+print(g.descricao, g.valor)
+
+ def ordenar_gastos(self):
         self.gastos.sort(key=lambda g: g.valor)
