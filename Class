@@ -10,6 +10,20 @@ class Categoria:
     def __init__(self, nome, limite):
         self.nome = nome
         self.limite = limite
+        self.gastos = []
+
+    def adicionar_gasto(self, gasto):
+        self.gastos.append(gasto)
+
+    def total_gastos(self):
+        soma = 0
+        for g in self.gastos:
+            soma += g.valor
+        return soma
+
+    def verificar_limite(self):
+        if self.total_gastos() > self.limite:
+            print("Limite excedido:", self.nome)
 
 
 class GerenciadorDeGastos:
