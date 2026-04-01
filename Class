@@ -1,4 +1,4 @@
-class Gastos:
+class Gasto:
     def __init__(self, valor, descricao, categoria, data):
         self.valor = valor
         self.descricao = descricao
@@ -11,15 +11,17 @@ class Categoria:
         self.nome = nome
         self.limite = limite
 
-    class Gerenciador_de_gastos:
 
-        def __init__(self, gastos, ):
-            self.gastos = []
+class GerenciadorDeGastos:
+    def __init__(self):
+        self.gastos = []
+        self.gastos[indice].descricao = nova_descricao
+    def adicionar_gasto(self, gasto):
+        self.gastos.append(gasto)
 
-            def adicionar_gastos(gasto):
-                self.gastos.append(gasto)
+    def listar_gastos(self):
+        for g in self.gastos:
+            print(g.descricao, "-", g.valor)
 
-        def editar_gasto(self, gasto):
-            def listar_gastos(gasto):
-                for gasto in self.gastos:
-                print(g.descricao)
+    def editar_gasto(self, indice, novo_valor, nova_descricao):
+        self.gastos[indice].valor = novo_valor
