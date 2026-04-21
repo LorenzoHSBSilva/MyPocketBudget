@@ -1,9 +1,9 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, font
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta (accesar Interface)
 
 # ─────────────────────────────────────────────
-#  MODELO (código original do aluno, intacto)
+#  MODELO Original ( Código Class)
 # ─────────────────────────────────────────────
 class Gasto:
     def __init__(self, valor, descricao, categoria, data):
@@ -160,7 +160,7 @@ class App(tk.Tk):
             self.nav_buttons[key] = btn
 
         # Footer
-        tk.Label(self.sidebar, text="Miguel Ângelo · 2025",
+        tk.Label(self.sidebar, text="MyPocketBudget",
                  bg=PANEL, fg=MUTED, font=FONT_SMALL).pack(side="bottom", pady=16)
 
     # ── Área principal ────────────────────────
@@ -272,8 +272,19 @@ class App(tk.Tk):
         self.tipo_var = tk.StringVar(value="Normal")
         tipo_frame = tk.Frame(form, bg=CARD)
         tipo_frame.grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 16))
-        for t in ["Normal", "Parcelado", "Extra"]:
+        for t in ["Normal", "Extra"]:
             tk.Radiobutton(tipo_frame, text=t, variable=self.tipo_var, value=t,
+                           bg=CARD, fg=TEXT, selectcolor=ACCENT2,
+                           activebackground=CARD, font=FONT_BODY).pack(side="left", padx=(0, 16))
+
+        # Forma de pagamento
+        tk.Label(form, text="Forma de Pagamento", bg=CARD, fg=MUTED, font=FONT_SMALL).grid(
+            row=2, column=0, sticky="w", pady=(0, 4))
+        self.pagamento_var = tk.StringVar(value="À vista")
+        pag_frame = tk.Frame(form, bg=CARD)
+        pag_frame.grid(row=3, column=0, columnspan=2, sticky="w", pady=(0, 16))
+        for p in ["À vista", "Parcelado"]:
+            tk.Radiobutton(pag_frame, text=p, variable=self.pagamento_var, value=p,
                            bg=CARD, fg=TEXT, selectcolor=ACCENT2,
                            activebackground=CARD, font=FONT_BODY,
                            command=self._toggle_parcelas).pack(side="left", padx=(0, 16))
@@ -286,29 +297,29 @@ class App(tk.Tk):
         ]
         for i, (label, attr) in enumerate(fields):
             tk.Label(form, text=label, bg=CARD, fg=MUTED, font=FONT_SMALL).grid(
-                row=2+i*2, column=0, sticky="w", pady=(0, 4))
+                row=4+i*2, column=0, sticky="w", pady=(0, 4))
             e = self._styled_entry(form)
-            e.grid(row=3+i*2, column=0, columnspan=2, sticky="ew", pady=(0, 12))
+            e.grid(row=5+i*2, column=0, columnspan=2, sticky="ew", pady=(0, 12))
             setattr(self, attr, e)
         e.insert(0, str(date.today()))  # data padrão
 
         # Parcelas (visível só para "Parcelado")
         self.lbl_parcelas = tk.Label(form, text="Nº de Parcelas (1x a 12x)", bg=CARD, fg=MUTED, font=FONT_SMALL)
-        self.lbl_parcelas.grid(row=8, column=0, sticky="w", pady=(0, 4))
+        self.lbl_parcelas.grid(row=10, column=0, sticky="w", pady=(0, 4))
         self.entry_parcelas = tk.Spinbox(form, from_=1, to=12, width=6,
                                          bg=BORDER, fg=TEXT, insertbackground=TEXT,
                                          buttonbackground=CARD, relief="flat",
                                          font=FONT_BODY, highlightthickness=1,
                                          highlightbackground=BORDER, highlightcolor=ACCENT)
-        self.entry_parcelas.grid(row=9, column=0, sticky="w", pady=(0, 12))
+        self.entry_parcelas.grid(row=11, column=0, sticky="w", pady=(0, 12))
 
         # Categoria
         tk.Label(form, text="Categoria", bg=CARD, fg=MUTED, font=FONT_SMALL).grid(
-            row=10, column=0, sticky="w", pady=(0, 4))
+            row=12, column=0, sticky="w", pady=(0, 4))
         self.cat_var = tk.StringVar()
         self.combo_cat = ttk.Combobox(form, textvariable=self.cat_var,
                                       values=list(self.categorias.keys()), state="readonly")
-        self.combo_cat.grid(row=11, column=0, columnspan=2, sticky="ew", pady=(0, 20))
+        self.combo_cat.grid(row=13, column=0, columnspan=2, sticky="ew", pady=(0, 20))
         self._style_combobox(self.combo_cat)
         if self.categorias:
             self.combo_cat.current(0)
@@ -320,10 +331,10 @@ class App(tk.Tk):
                         font=("Helvetica", 11, "bold"), bd=0, padx=20, pady=10,
                         cursor="hand2", activebackground=ACCENT2, activeforeground="white",
                         command=self._registrar_gasto)
-        btn.grid(row=12, column=0, sticky="w")
+        btn.grid(row=14, column=0, sticky="w")
 
     def _toggle_parcelas(self):
-        show = self.tipo_var.get() == "Parcelado"
+        show = self.pagamento_var.get() == "Parcelado"
         state = "normal" if show else "disabled"
         self.entry_parcelas.configure(state=state,
                                       fg=TEXT if show else "#3a3d52",
@@ -347,14 +358,17 @@ class App(tk.Tk):
 
         cat = self.categorias[nome_cat]
         tipo = self.tipo_var.get()
+        pagamento = self.pagamento_var.get()
 
-        if tipo == "Parcelado":
+        if pagamento == "Parcelado":
             try:
                 parc = int(self.entry_parcelas.get())
             except ValueError:
                 messagebox.showerror("Erro", "Número de parcelas inválido.")
                 return
+            # Extra parcelado ou Normal parcelado → GastoParcelado
             gasto = GastoParcelado(valor, desc, parc, cat, data)
+            gasto.extra = (tipo == "Extra")  # marca se é extra, sem alterar o modelo
         elif tipo == "Extra":
             gasto = GastoExtra(valor, desc, cat, data)
         else:
@@ -452,7 +466,7 @@ class App(tk.Tk):
         today = date.today()
         for g in lista:
             if isinstance(g, GastoParcelado):
-                tipo = "Parcelado"
+                tipo = "Extra Parcelado" if getattr(g, "extra", False) else "Parcelado"
                 parcelas_str = f"{g.parcelas}x"
                 # calcula parcelas pagas vs restantes pela data de início
                 pagas_manual = self.parcelas_pagas_dict.get(id(g), 0)
@@ -658,17 +672,66 @@ class App(tk.Tk):
         tk.Label(self.cat_list_frame, text="Categorias existentes",
                  bg=BG, fg=TEXT, font=FONT_HEADER).pack(anchor="w", pady=(8, 12))
         for nome, cat in self.categorias.items():
-            row = tk.Frame(self.cat_list_frame, bg=CARD, padx=16, pady=10)
-            row.pack(fill="x", pady=4)
-            tk.Label(row, text=nome, bg=CARD, fg=TEXT, font=FONT_BODY).pack(side="left")
-            tk.Label(row, text=f"Limite: R$ {cat.limite:,.2f}",
-                     bg=CARD, fg=MUTED, font=FONT_SMALL).pack(side="left", padx=16)
-            tk.Label(row, text=f"Gasto: R$ {cat.total_gastos():,.2f}",
-                     bg=CARD, fg=ACCENT, font=FONT_SMALL).pack(side="left")
-            tk.Button(row, text="🗑", bg=CARD, fg=DANGER, bd=0, cursor="hand2",
+            card = tk.Frame(self.cat_list_frame, bg=CARD, padx=16, pady=12)
+            card.pack(fill="x", pady=4)
+
+            # Linha 1: nome + botões
+            top = tk.Frame(card, bg=CARD)
+            top.pack(fill="x")
+            tk.Label(top, text=nome, bg=CARD, fg=TEXT, font=FONT_HEADER).pack(side="left")
+            tk.Button(top, text="🗑", bg=CARD, fg=DANGER, bd=0, cursor="hand2",
                       font=("Helvetica", 13),
                       command=lambda n=nome: self._excluir_categoria(n)
                       ).pack(side="right")
+
+            # Linha 2: limite editável + total gasto
+            mid = tk.Frame(card, bg=CARD)
+            mid.pack(fill="x", pady=(8, 4))
+
+            tk.Label(mid, text="Limite: R$", bg=CARD, fg=MUTED, font=FONT_SMALL).pack(side="left")
+            entry_lim = tk.Entry(mid, bg=BORDER, fg=TEXT, insertbackground=TEXT,
+                                  font=FONT_SMALL, relief="flat", width=10,
+                                  highlightthickness=1, highlightbackground=BORDER,
+                                  highlightcolor=ACCENT)
+            entry_lim.insert(0, f"{cat.limite:,.2f}")
+            entry_lim.pack(side="left", padx=(4, 8))
+            tk.Button(mid, text="✔ Salvar", bg=SUCCESS, fg=BG,
+                      font=("Helvetica", 9, "bold"), bd=0, padx=8, pady=3,
+                      cursor="hand2",
+                      command=lambda n=nome, e=entry_lim: self._editar_limite(n, e)
+                      ).pack(side="left", padx=(0, 20))
+
+            total = cat.total_gastos()
+            pct = min(total / cat.limite, 1.0) if cat.limite > 0 else 0
+            cor = DANGER if pct >= 1 else WARNING if pct >= 0.75 else SUCCESS
+            tk.Label(mid, text=f"Gasto: R$ {total:,.2f}", bg=CARD, fg=cor,
+                     font=FONT_SMALL).pack(side="left")
+
+            # Linha 3: gastos da categoria
+            if cat.gastos:
+                tk.Label(card, text="Gastos nesta categoria:",
+                         bg=CARD, fg=MUTED, font=FONT_SMALL).pack(anchor="w", pady=(6,2))
+                for g in cat.gastos:
+                    grow = tk.Frame(card, bg=CARD)
+                    grow.pack(fill="x")
+                    tipo = "💳" if isinstance(g, GastoParcelado) else "⚡" if isinstance(g, GastoExtra) else "•"
+                    tk.Label(grow, text=f"  {tipo} {g.descricao}",
+                             bg=CARD, fg=TEXT, font=FONT_SMALL).pack(side="left")
+                    tk.Label(grow, text=f"R$ {g.valor:,.2f}  {g.data}",
+                             bg=CARD, fg=MUTED, font=FONT_SMALL).pack(side="right")
+            else:
+                tk.Label(card, text="Nenhum gasto nesta categoria ainda.",
+                         bg=CARD, fg=MUTED, font=FONT_SMALL).pack(anchor="w", pady=(6,0))
+
+    def _editar_limite(self, nome, entry):
+        try:
+            novo_limite = float(entry.get().replace(",", "."))
+        except ValueError:
+            messagebox.showerror("Erro", "Limite inválido.")
+            return
+        self.categorias[nome].limite = novo_limite
+        self._refresh_categorias()
+        messagebox.showinfo("Sucesso", f"Limite de '{nome}' atualizado para R$ {novo_limite:,.2f}!")
 
     def _excluir_categoria(self, nome):
         cat = self.categorias[nome]
