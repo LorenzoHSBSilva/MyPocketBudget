@@ -55,8 +55,9 @@ class GerenciadorDeGastos:
         self.gastos[indice].valor = novo_valor
         self.gastos[indice].descricao = nova_descricao
 
-    def remover_gasto(self, gasto):
-        self.gastos.remove(gasto)
+def remover_gasto(self, gasto):
+    self.gastos.remove(gasto)
+    gasto.categoria.gastos.remove(gasto)
 
     def buscar_gasto(self, nome):
         for g in self.gastos:
