@@ -143,7 +143,7 @@ class App(tk.Tk):
 
         # Botões de navegação
         nav = [
-            ("🏠  Dashboard",    "dashboard"),
+            ("🏠  Visão Geral",   "dashboard"),
             ("➕  Novo Gasto",   "novo_gasto"),
             ("📋  Meus Gastos",  "listar"),
             ("🔍  Buscar",       "buscar"),
@@ -222,10 +222,11 @@ class App(tk.Tk):
         qtd   = len(self.gerenciador.gastos)
         cats_excedidas = sum(1 for c in self.categorias.values() if c.verificar_limite())
 
+        extras = sum(1 for g in self.gerenciador.gastos if isinstance(g, GastoExtra) and not isinstance(g, GastoParcelado))
         cards = [
             ("Total Gasto",       f"R$ {total:,.2f}", ACCENT),
             ("Nº de Gastos",      str(qtd),            ACCENT2),
-            ("Categorias",        str(len(self.categorias)), SUCCESS),
+            ("⚡ Gastos Extras",  str(extras),         WARNING if extras > 0 else MUTED),
             ("Limites Excedidos", str(cats_excedidas), DANGER if cats_excedidas > 0 else MUTED),
         ]
         for i, (label, val, color) in enumerate(cards):
@@ -381,8 +382,7 @@ class App(tk.Tk):
         self.gerenciador.adicionar_gasto(gasto)
 
         msg = f"Gasto '{desc}' registrado com sucesso!"
-        # verifica limite diretamente, sem depender de retorno do modelo
-        if cat.total_gastos() > cat.limite:
+        if cat.verificar_limite():
             msg += f"\n\n⚠️ Atenção: limite da categoria '{nome_cat}' foi excedido!"
             messagebox.showwarning("Gasto Registrado", msg)
         else:
@@ -433,6 +433,7 @@ class App(tk.Tk):
                        "Tipo": 75, "Parcelas": 65, "Data": 95, "Status Parcelas": 130}
             self.tree.column(c, width=widths.get(c, 100))
 
+        self.tree.tag_configure("extra", background="#2A1A0F", foreground="#F7A34A")
         sb = ttk.Scrollbar(frame_tree, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=sb.set)
         self.tree.pack(side="left", fill="both", expand=True)
@@ -479,7 +480,7 @@ class App(tk.Tk):
                     meses_passados = (today.year - inicio.year) * 12 + (today.month - inicio.month)
                     pagas = max(pagas_manual, min(meses_passados + 1, g.parcelas))
                     restantes = g.parcelas - pagas
-                    valor_parcela = g.valor / g.parcelas
+                    valor_parcela = g.valor_parcela
                     if restantes == 0:
                         status = "✅ Quitado"
                     else:
@@ -487,7 +488,7 @@ class App(tk.Tk):
                 except Exception:
                     status = f"{g.parcelas}x"
             elif isinstance(g, GastoExtra):
-                tipo = "Extra"
+                tipo = "⚡ Extra"
                 parcelas_str = "—"
                 status = "—"
             else:
@@ -495,10 +496,11 @@ class App(tk.Tk):
                 parcelas_str = "—"
                 status = "—"
 
+            tag = "extra" if isinstance(g, GastoExtra) and not isinstance(g, GastoParcelado) else ""
             self.tree.insert("", "end", values=(
                 g.descricao, f"R$ {g.valor:,.2f}", g.categoria.nome,
                 tipo, parcelas_str, g.data, status
-            ))
+            ), tags=(tag,))
 
     def _ordenar_valor(self):
         self.gerenciador.ordenar_gastos()
@@ -570,12 +572,16 @@ class App(tk.Tk):
                      bg=BG, fg=MUTED, font=FONT_BODY).pack(pady=30)
             return
         for g in resultados:
-            card = tk.Frame(self.busca_result, bg=CARD, padx=16, pady=10)
+            is_extra = isinstance(g, GastoExtra) and not isinstance(g, GastoParcelado)
+            bg_card = "#2A1A0F" if is_extra else CARD
+            card = tk.Frame(self.busca_result, bg=bg_card, padx=16, pady=10)
             card.pack(fill="x", pady=4)
-            tk.Label(card, text=g.descricao, bg=CARD, fg=TEXT, font=FONT_BODY).pack(side="left")
-            tk.Label(card, text=f"R$ {g.valor:,.2f}", bg=CARD, fg=ACCENT,
+            fg_desc = "#F7A34A" if is_extra else TEXT
+            tk.Label(card, text=("⚡ " if is_extra else "") + g.descricao,
+                     bg=bg_card, fg=fg_desc, font=FONT_BODY).pack(side="left")
+            tk.Label(card, text=f"R$ {g.valor:,.2f}", bg=bg_card, fg=WARNING if is_extra else ACCENT,
                      font=("Helvetica", 11, "bold")).pack(side="right")
-            tk.Label(card, text=g.categoria.nome, bg=CARD, fg=MUTED,
+            tk.Label(card, text=g.categoria.nome, bg=bg_card, fg=MUTED,
                      font=FONT_SMALL).pack(side="right", padx=16)
 
     # ─────────────────────────────────────────
@@ -771,7 +777,7 @@ class App(tk.Tk):
         for g in parcelados:
             pagas = self.parcelas_pagas_dict.get(id(g), 0)
             restantes = g.parcelas - pagas
-            valor_parcela = g.valor / g.parcelas
+            valor_parcela = g.valor_parcela
             quitado = pagas >= g.parcelas
 
             # Card principal
