@@ -2,9 +2,6 @@ import tkinter as tk
 from tkinter import ttk, messagebox, font
 from datetime import date, datetime, timedelta
 
-# ─────────────────────────────────────────────
-#  MODELO (código original do aluno, intacto)
-# ─────────────────────────────────────────────
 class Gasto:
     def __init__(self, valor, descricao, categoria, data):
         self.valor = valor
