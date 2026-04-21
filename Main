@@ -16,6 +16,7 @@ class GastoParcelado(Gasto):
     def __init__(self, valor, descricao, parcelas, categoria, data):
         super().__init__(valor, descricao, categoria, data)
         self.parcelas = parcelas
+        self.valor_parcela = valor / parcelas if parcelas > 0 else 0
 
 class GastoExtra(Gasto):
     def __init__(self, valor, descricao, categoria, data):
@@ -37,8 +38,10 @@ class Categoria:
         return soma
 
     def verificar_limite(self):
-        if self.total_gastos() > self.limite:
+        excedeu = self.total_gastos() > self.limite
+        if excedeu:
             print("Limite excedido:", self.nome)
+        return excedeu
 
 class GerenciadorDeGastos:
     def __init__(self):
@@ -59,6 +62,7 @@ class GerenciadorDeGastos:
 
     def remover_gasto(self, gasto):
         self.gastos.remove(gasto)
+        gasto.categoria.gastos.remove(gasto)
 
     def buscar_gasto(self, nome):
         for g in self.gastos:
@@ -534,7 +538,6 @@ class App(tk.Tk):
         idx = self.tree.index(sel[0])
         g = self.gerenciador.gastos[idx]
         if messagebox.askyesno("Confirmar", f"Remover '{g.descricao}'?"):
-            g.categoria.gastos.remove(g)
             self.gerenciador.remover_gasto(g)
             self._refresh_lista()
 
