@@ -9,7 +9,7 @@ class GastoParcelado(Gasto):
     def __init__(self, valor, descricao, parcelas, categoria, data):
         super().__init__(valor, descricao, categoria, data)
         self.parcelas = parcelas
-        self.valor_parcela = valor / parcelas
+        self.valor_parcela = valor / parcelas if parcelas > 0 else 0
 
 class GastoExtra(Gasto):
     def __init__(self, valor, descricao, categoria, data):
