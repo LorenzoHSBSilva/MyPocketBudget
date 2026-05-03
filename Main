@@ -75,9 +75,7 @@ class GerenciadorDeGastos:
         self.gastos.sort(key=lambda g: g.valor)
 
 
-# ─────────────────────────────────────────────
-#  PALETA & CONSTANTES DE ESTILO
-# ─────────────────────────────────────────────
+
 BG        = "#0F1117"
 PANEL     = "#1A1D27"
 CARD      = "#22263A"
@@ -98,7 +96,7 @@ FONT_MONO   = ("Courier", 10)
 
 
 # ─────────────────────────────────────────────
-#  APLICATIVO PRINCIPAL
+#  APLICATIVO 
 # ─────────────────────────────────────────────
 class App(tk.Tk):
     def __init__(self):
@@ -198,7 +196,7 @@ class App(tk.Tk):
             self._refresh_parcelados()
 
     # ─────────────────────────────────────────
-    #  TELA 1 — DASHBOARD
+    #  TELA 1 - VISÃO GERAL
     # ─────────────────────────────────────────
     def _build_dashboard(self, parent):
         self._page_header(parent, "MyPocketBudget", "Visão geral das suas finanças")
@@ -260,7 +258,7 @@ class App(tk.Tk):
                                                                   relwidth=pct)
 
     # ─────────────────────────────────────────
-    #  TELA 2 — NOVO GASTO
+    #  TELA 2 - NOVO GASTO
     # ─────────────────────────────────────────
     def _build_novo_gasto(self, parent):
         self._page_header(parent, "Novo Gasto", "Registre uma despesa")
@@ -389,7 +387,7 @@ class App(tk.Tk):
             e.delete(0, "end")
 
     # ─────────────────────────────────────────
-    #  TELA 3 — LISTAR GASTOS
+    #  TELA 3 - LISTAR GASTO
     # ─────────────────────────────────────────
     def _build_listar(self, parent):
         self._page_header(parent, "Meus Gastos", "Gerencie suas despesas registradas")
