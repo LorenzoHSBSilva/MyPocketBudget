@@ -84,3 +84,14 @@ O método listar_gasto percorre todos os gasto e acessa g.descricao e g.valor e 
 10 - Limite de Orçamento por Categoria — definição e edição de limite por categoria (100%)
 
 
+---
+
+## Onde rodar:
+
+O projeto pode ser executado em qualquer IDE que suporte Python, como:
+
+* VS Code
+* PyCharm
+* IDLE
+
+Não é necessária a instalação de bibliotecas externas, pois o sistema utiliza apenas o Tkinter, que já vem com próprio Python.
