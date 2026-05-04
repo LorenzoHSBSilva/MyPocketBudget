@@ -63,8 +63,6 @@ O método listar_gasto percorre todos os gasto e acessa g.descricao e g.valor e 
 
 ## Funcionalidades:
 
-## Funcionalidades
-
 1- Criar Categorias Próprias — criação e exclusão de categorias personalizadas (100%)
 
 2 - Gasto Extra — registro de gastos inesperados com destaque visual em laranja (100%)
