@@ -60,6 +60,7 @@ O método listar_gasto percorre todos os gasto e acessa g.descricao e g.valor e 
 ---
 
 
+``` 
 ## Funcionalidades:
 
 1- Criar Categorias Próprias — criação e exclusão de categorias personalizadas (100%)
