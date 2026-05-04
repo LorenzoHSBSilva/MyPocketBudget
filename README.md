@@ -69,6 +69,20 @@ O método listar_gasto percorre todos os gasto e acessa g.descricao e g.valor e 
 
 2 - Gasto Extra — registro de gastos inesperados com destaque visual em laranja (100%)
 
+3 - Especificação de Gastos — registro detalhado com valor, descrição e categoria (100%)
 
+4 - Registro de Despesa Parcelada — parcelamento de 1x a 12x com acompanhamento (100%)
+
+5 - Filtro de Gastos por Data — exibe gastos de uma data específica (100%)
+
+6 - Alerta de Gastos Excedentes — popup automático ao ultrapassar o limite da categoria (100%)
+
+7 - Busca de Gastos — localiza despesas pelo nome (100%)
+
+8 - Editar Gastos — edição e remoção de gastos já registrados (100%)
+
+9 - Ordenar Gastos — ordenação por valor ou por data (100%)
+
+10 - Limite de Orçamento por Categoria — definição e edição de limite por categoria (100%)
 
 
