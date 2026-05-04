@@ -63,6 +63,7 @@ O método listar_gasto percorre todos os gasto e acessa g.descricao e g.valor e 
 ## Funcionalidades:
 
 1- Criar Categorias Próprias — criação e exclusão de categorias personalizadas (100%)
+---
 2 - Gasto Extra — registro de gastos inesperados com destaque visual em laranja (100%)
 3 - Especificação de Gastos — registro detalhado com valor, descrição e categoria (100%)
 4 - Registro de Despesa Parcelada — parcelamento de 1x a 12x com acompanhamento (100%)
