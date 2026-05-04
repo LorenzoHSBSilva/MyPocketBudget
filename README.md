@@ -59,5 +59,4 @@ O método listar_gasto percorre todos os gasto e acessa g.descricao e g.valor e 
 
 ---
 
-Funcionalidades
-#FuncionalidadeStatus1Criar Categorias Próprias — criação e exclusão de categorias personalizadas100%2Gasto Extra — registro de gastos inesperados com destaque visual em laranja100%3Especificação de Gastos — registro detalhado com valor, descrição e categoria100%4Registro de Despesa Parcelada — parcelamento de 1x a 12x com acompanhamento100%5Filtro de Gastos por Data — exibe gastos de uma data específica100%6Alerta de Gastos Excedentes — popup automático ao ultrapassar o limite da categoria100%7Busca de Gastos — localiza despesas pelo nome100%8Editar Gastos — edição e remoção de gastos já registrados100%9Ordenar Gastos — ordenação por valor ou por data100%10Limite de Orçamento por Categoria — definição e edição de limite por categoria100%
+
