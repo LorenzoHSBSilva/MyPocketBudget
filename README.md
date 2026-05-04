@@ -55,7 +55,7 @@ class GerenciadorDeGastos:
             print(g.descricao, "-", g.valor)
 ```
 
-O método listar_gasto percorre todos os gasto e acessa g.descricao e g.valor e independetemente do tipo de gasto (objeto), o mesmmo código funciona de mesmo modo sem se importar com o tipo de gasto, ou seja os diferentes objetos são tratado da mesma forma.
+O método listar_gasto percorre todos os gasto e acessa g.descricao e g.valor e independetemente do tipo de gasto (objeto), o mesmo código funciona de igual maneira sem se importar com o tipo de gasto, ou seja os diferentes objetos são tratados da mesma forma. (Polimofismo de subtipo)
 
 ---
 
