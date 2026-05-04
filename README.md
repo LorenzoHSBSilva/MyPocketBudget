@@ -42,7 +42,7 @@ class GastoExtra(Gasto):  # herda de Gasto
 
 **O Uso da Herança**
 
-A herança está na superclasse Gasto e nas classes filhas GastoExtra e GastoParcelado, a herança foi utilizada aqui pois evita repetições desnecessárias no codigo e como GastoExtra e GastoParcelada são tipos de gasto, logo, as subclasses poderia reutilizar o metodo e atributos da superclasse e serem sobrescritos com overriding.
+A herança está na superclasse Gasto e nas classes filhas GastoExtra e GastoParcelado, a herança foi utilizada aqui pois evita repetições desnecessárias no codigo e como GastoExtra e GastoParcelada são tipos de gasto, logo, as subclasses podem reutilizar o metodo e atributos da superclasse e serem sobrescritos com overriding.
 
 ---
 
