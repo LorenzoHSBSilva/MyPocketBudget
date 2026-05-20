@@ -75,7 +75,6 @@ class GerenciadorDeGastos:
         self.gastos.sort(key=lambda g: g.valor)
 
 
-
 BG        = "#0F1117"
 PANEL     = "#1A1D27"
 CARD      = "#22263A"
@@ -95,9 +94,6 @@ FONT_SMALL  = ("Helvetica", 9)
 FONT_MONO   = ("Courier", 10)
 
 
-# ─────────────────────────────────────────────
-#  APLICATIVO 
-# ─────────────────────────────────────────────
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -109,9 +105,8 @@ class App(tk.Tk):
 
         self.gerenciador = GerenciadorDeGastos()
         self.categorias: dict[str, Categoria] = {}
-        self.parcelas_pagas_dict: dict[int, int] = {}  # id(gasto) -> parcelas pagas
+        self.parcelas_pagas_dict: dict[int, int] = {}
 
-        # Categorias padrão
         for nome, lim in [("Alimentação", 800), ("Transporte", 300), ("Lazer", 200)]:
             self.categorias[nome] = Categoria(nome, lim)
 
@@ -119,13 +114,11 @@ class App(tk.Tk):
         self._build_main()
         self._show_frame("dashboard")
 
-    # ── Sidebar ──────────────────────────────
     def _build_sidebar(self):
         self.sidebar = tk.Frame(self, bg=PANEL, width=220)
         self.sidebar.pack(side="left", fill="y")
         self.sidebar.pack_propagate(False)
 
-        # Logo
         logo_frame = tk.Frame(self.sidebar, bg=PANEL)
         logo_frame.pack(fill="x", pady=(28, 10), padx=20)
         tk.Label(logo_frame, text="💰", bg=PANEL, font=("Helvetica", 28)).pack(anchor="w")
@@ -136,7 +129,6 @@ class App(tk.Tk):
 
         tk.Frame(self.sidebar, bg=BORDER, height=1).pack(fill="x", padx=16, pady=16)
 
-        # Botões de navegação
         nav = [
             ("🏠  Visão Geral",   "dashboard"),
             ("➕  Novo Gasto",   "novo_gasto"),
@@ -158,11 +150,9 @@ class App(tk.Tk):
             btn.pack(fill="x")
             self.nav_buttons[key] = btn
 
-        # Footer
         tk.Label(self.sidebar, text="MyPocketBudget",
                  bg=PANEL, fg=MUTED, font=FONT_SMALL).pack(side="bottom", pady=16)
 
-    # ── Área principal ────────────────────────
     def _build_main(self):
         self.main = tk.Frame(self, bg=BG)
         self.main.pack(side="right", fill="both", expand=True)
@@ -195,9 +185,6 @@ class App(tk.Tk):
         elif key == "parcelados":
             self._refresh_parcelados()
 
-    # ─────────────────────────────────────────
-    #  TELA 1 - VISÃO GERAL
-    # ─────────────────────────────────────────
     def _build_dashboard(self, parent):
         self._page_header(parent, "MyPocketBudget", "Visão geral das suas finanças")
 
@@ -232,7 +219,6 @@ class App(tk.Tk):
             tk.Label(card, text=val, bg=CARD, fg=color,
                      font=("Georgia", 18, "bold")).pack(anchor="w", pady=(4,0))
 
-        # Barras por categoria
         tk.Label(self.dash_cat_frame, text="Gastos por Categoria",
                  bg=BG, fg=TEXT, font=FONT_HEADER).pack(anchor="w", pady=(8,12))
 
@@ -257,16 +243,12 @@ class App(tk.Tk):
             tk.Frame(bar_bg, bg=color, height=8, width=w).place(x=0, y=0, relheight=1,
                                                                   relwidth=pct)
 
-    # ─────────────────────────────────────────
-    #  TELA 2 - NOVO GASTO
-    # ─────────────────────────────────────────
     def _build_novo_gasto(self, parent):
         self._page_header(parent, "Novo Gasto", "Registre uma despesa")
 
         form = tk.Frame(parent, bg=CARD, padx=32, pady=32)
         form.pack(padx=30, pady=0, fill="x")
 
-        # Tipo de gasto
         tk.Label(form, text="Tipo de Gasto", bg=CARD, fg=MUTED, font=FONT_SMALL).grid(
             row=0, column=0, sticky="w", pady=(0, 4))
         self.tipo_var = tk.StringVar(value="Normal")
@@ -277,7 +259,6 @@ class App(tk.Tk):
                            bg=CARD, fg=TEXT, selectcolor=ACCENT2,
                            activebackground=CARD, font=FONT_BODY).pack(side="left", padx=(0, 16))
 
-        # Forma de pagamento
         tk.Label(form, text="Forma de Pagamento", bg=CARD, fg=MUTED, font=FONT_SMALL).grid(
             row=2, column=0, sticky="w", pady=(0, 4))
         self.pagamento_var = tk.StringVar(value="À vista")
@@ -289,7 +270,6 @@ class App(tk.Tk):
                            activebackground=CARD, font=FONT_BODY,
                            command=self._toggle_parcelas).pack(side="left", padx=(0, 16))
 
-        # Campos
         fields = [
             ("Descrição",  "entry_desc"),
             ("Valor (R$)", "entry_valor"),
@@ -301,9 +281,8 @@ class App(tk.Tk):
             e = self._styled_entry(form)
             e.grid(row=5+i*2, column=0, columnspan=2, sticky="ew", pady=(0, 12))
             setattr(self, attr, e)
-        e.insert(0, str(date.today()))  # data padrão
+        e.insert(0, str(date.today()))
 
-        # Parcelas (visível só para "Parcelado")
         self.lbl_parcelas = tk.Label(form, text="Nº de Parcelas (1x a 12x)", bg=CARD, fg=MUTED, font=FONT_SMALL)
         self.lbl_parcelas.grid(row=10, column=0, sticky="w", pady=(0, 4))
         self.entry_parcelas = tk.Spinbox(form, from_=1, to=12, width=6,
@@ -313,7 +292,6 @@ class App(tk.Tk):
                                          highlightbackground=BORDER, highlightcolor=ACCENT)
         self.entry_parcelas.grid(row=11, column=0, sticky="w", pady=(0, 12))
 
-        # Categoria
         tk.Label(form, text="Categoria", bg=CARD, fg=MUTED, font=FONT_SMALL).grid(
             row=12, column=0, sticky="w", pady=(0, 4))
         self.cat_var = tk.StringVar()
@@ -366,9 +344,8 @@ class App(tk.Tk):
             except ValueError:
                 messagebox.showerror("Erro", "Número de parcelas inválido.")
                 return
-            # Extra parcelado ou Normal parcelado → GastoParcelado
             gasto = GastoParcelado(valor, desc, parc, cat, data)
-            gasto.extra = (tipo == "Extra")  # marca se é extra, sem alterar o modelo
+            gasto.extra = (tipo == "Extra")
         elif tipo == "Extra":
             gasto = GastoExtra(valor, desc, cat, data)
         else:
@@ -386,9 +363,6 @@ class App(tk.Tk):
         for e in [self.entry_desc, self.entry_valor]:
             e.delete(0, "end")
 
-    # ─────────────────────────────────────────
-    #  TELA 3 - LISTAR GASTO
-    # ─────────────────────────────────────────
     def _build_listar(self, parent):
         self._page_header(parent, "Meus Gastos", "Gerencie suas despesas registradas")
 
@@ -404,7 +378,6 @@ class App(tk.Tk):
                       activebackground=BORDER, activeforeground=TEXT,
                       command=cmd).pack(side="left", padx=(0, 8))
 
-        # Tabela
         cols = ("Descrição", "Valor", "Categoria", "Tipo", "Parcelas", "Data", "Status Parcelas")
         style = ttk.Style()
         style.theme_use("clam")
@@ -434,7 +407,6 @@ class App(tk.Tk):
         self.tree.pack(side="left", fill="both", expand=True)
         sb.pack(side="right", fill="y")
 
-        # Painel de edição/remoção
         edit_panel = tk.Frame(parent, bg=PANEL, padx=20, pady=14)
         edit_panel.pack(fill="x", padx=30, pady=12)
 
@@ -468,7 +440,6 @@ class App(tk.Tk):
             if isinstance(g, GastoParcelado):
                 tipo = "Extra Parcelado" if getattr(g, "extra", False) else "Parcelado"
                 parcelas_str = f"{g.parcelas}x"
-                # calcula parcelas pagas vs restantes pela data de início
                 pagas_manual = self.parcelas_pagas_dict.get(id(g), 0)
                 try:
                     inicio = datetime.strptime(g.data, "%Y-%m-%d").date()
@@ -538,9 +509,6 @@ class App(tk.Tk):
             self.gerenciador.remover_gasto(g)
             self._refresh_lista()
 
-    # ─────────────────────────────────────────
-    #  TELA 4 — BUSCAR
-    # ─────────────────────────────────────────
     def _build_buscar(self, parent):
         self._page_header(parent, "Buscar Gastos", "Encontre despesas pelo nome")
 
@@ -579,9 +547,6 @@ class App(tk.Tk):
             tk.Label(card, text=g.categoria.nome, bg=bg_card, fg=MUTED,
                      font=FONT_SMALL).pack(side="right", padx=16)
 
-    # ─────────────────────────────────────────
-    #  TELA 5 — FILTRAR POR DATA
-    # ─────────────────────────────────────────
     def _build_filtrar(self, parent):
         self._page_header(parent, "Filtrar por Data", "Veja seus gastos em um período")
 
@@ -617,9 +582,6 @@ class App(tk.Tk):
             tk.Label(card, text=f"R$ {g.valor:,.2f}", bg=CARD, fg=ACCENT,
                      font=("Helvetica", 11, "bold")).pack(side="right")
 
-    # ─────────────────────────────────────────
-    #  TELA 6 — CATEGORIAS
-    # ─────────────────────────────────────────
     def _build_categorias(self, parent):
         self._page_header(parent, "Categorias", "Crie e gerencie suas categorias")
 
@@ -644,7 +606,6 @@ class App(tk.Tk):
                   cursor="hand2", activebackground=ACCENT2, activeforeground="white",
                   command=self._criar_categoria).grid(row=1, column=4)
 
-        # Lista de categorias
         self.cat_list_frame = tk.Frame(parent, bg=BG)
         self.cat_list_frame.pack(fill="both", expand=True, padx=30)
         self._refresh_categorias()
@@ -679,7 +640,6 @@ class App(tk.Tk):
             card = tk.Frame(self.cat_list_frame, bg=CARD, padx=16, pady=12)
             card.pack(fill="x", pady=4)
 
-            # Linha 1: nome + botões
             top = tk.Frame(card, bg=CARD)
             top.pack(fill="x")
             tk.Label(top, text=nome, bg=CARD, fg=TEXT, font=FONT_HEADER).pack(side="left")
@@ -688,7 +648,6 @@ class App(tk.Tk):
                       command=lambda n=nome: self._excluir_categoria(n)
                       ).pack(side="right")
 
-            # Linha 2: limite editável + total gasto
             mid = tk.Frame(card, bg=CARD)
             mid.pack(fill="x", pady=(8, 4))
 
@@ -711,7 +670,6 @@ class App(tk.Tk):
             tk.Label(mid, text=f"Gasto: R$ {total:,.2f}", bg=CARD, fg=cor,
                      font=FONT_SMALL).pack(side="left")
 
-            # Linha 3: gastos da categoria
             if cat.gastos:
                 tk.Label(card, text="Gastos nesta categoria:",
                          bg=CARD, fg=MUTED, font=FONT_SMALL).pack(anchor="w", pady=(6,2))
@@ -747,9 +705,6 @@ class App(tk.Tk):
             self.combo_cat["values"] = list(self.categorias.keys())
             self._refresh_categorias()
 
-    # ─────────────────────────────────────────
-    #  TELA 7 — PARCELADOS
-    # ─────────────────────────────────────────
     def _build_parcelados(self, parent):
         self._page_header(parent, "Gastos Parcelados", "Acompanhe e quite suas parcelas")
 
@@ -775,11 +730,9 @@ class App(tk.Tk):
             valor_parcela = g.valor_parcela
             quitado = pagas >= g.parcelas
 
-            # Card principal
             card = tk.Frame(self.parc_list_frame, bg=CARD, padx=20, pady=14)
             card.pack(fill="x", pady=6)
 
-            # Linha 1: título + badge
             top = tk.Frame(card, bg=CARD)
             top.pack(fill="x")
             tk.Label(top, text=g.descricao, bg=CARD, fg=TEXT,
@@ -789,7 +742,6 @@ class App(tk.Tk):
             tk.Label(top, text=badge_text, bg=badge_color, fg=BG,
                      font=FONT_SMALL, padx=8, pady=3).pack(side="right")
 
-            # Linha 2: detalhes
             mid = tk.Frame(card, bg=CARD)
             mid.pack(fill="x", pady=(6, 8))
             tk.Label(mid, text=f"Total: R$ {g.valor:,.2f}",
@@ -799,7 +751,6 @@ class App(tk.Tk):
             tk.Label(mid, text=f"Restantes: {restantes}x",
                      bg=CARD, fg=MUTED, font=FONT_SMALL).pack(side="left")
 
-            # Barra de progresso
             pct = pagas / g.parcelas if g.parcelas > 0 else 0
             bar_bg = tk.Frame(card, bg=BORDER, height=8)
             bar_bg.pack(fill="x", pady=(0, 10))
@@ -808,7 +759,6 @@ class App(tk.Tk):
                 tk.Frame(bar_bg, bg=SUCCESS if quitado else ACCENT,
                          height=8).place(relx=0, rely=0, relheight=1, relwidth=pct)
 
-            # Linha de parcelas individuais (bolinhas)
             if not quitado:
                 bolhas = tk.Frame(card, bg=CARD)
                 bolhas.pack(fill="x", pady=(0, 10))
@@ -819,7 +769,6 @@ class App(tk.Tk):
                 tk.Label(bolhas, text=f"  ← clique 'Quitar' para registrar pagamento",
                          bg=CARD, fg=MUTED, font=FONT_SMALL).pack(side="left", padx=6)
 
-            # Botões
             btn_row = tk.Frame(card, bg=CARD)
             btn_row.pack(anchor="w")
 
@@ -862,9 +811,6 @@ class App(tk.Tk):
             messagebox.showinfo("🎉 Parabéns!", f"Gasto '{gasto.descricao}' totalmente quitado!")
             self._refresh_parcelados()
 
-    # ─────────────────────────────────────────
-    #  HELPERS
-    # ─────────────────────────────────────────
     def _page_header(self, parent, title, subtitle):
         hdr = tk.Frame(parent, bg=BG)
         hdr.pack(fill="x", padx=30, pady=(28, 20))
@@ -887,9 +833,6 @@ class App(tk.Tk):
                          foreground=TEXT, arrowcolor=TEXT)
 
 
-# ─────────────────────────────────────────────
-#  ENTRY POINT
-# ─────────────────────────────────────────────
 if __name__ == "__main__":
     app = App()
     app.mainloop()
