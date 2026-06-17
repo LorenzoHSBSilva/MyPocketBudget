@@ -1,0 +1,15 @@
+from fastapi import APIRouter
+import services.gasto_service as svc
+
+router = APIRouter(tags=["Dashboard"])
+
+
+@router.get("/dashboard")
+def get_dashboard():
+    """
+    Retorna resumo financeiro:
+    - total gasto, qtd de gastos, gastos extras
+    - categorias com percentual e alertas de limite
+    - parcelados em aberto
+    """
+    return svc.get_dashboard()
