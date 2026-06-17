@@ -1,0 +1,41 @@
+from fastapi import APIRouter, HTTPException
+
+from routers.schemas import CategoriaCriarRequest, CategoriaEditarRequest
+import services.gasto_service as svc
+
+router = APIRouter(prefix="/categorias", tags=["Categorias"])
+
+
+@router.post("/", status_code=201)
+def criar_categoria(body: CategoriaCriarRequest):
+    """Cria uma nova categoria de gastos."""
+    try:
+        return svc.criar_categoria(body.nome, body.limite)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/")
+def listar_categorias():
+    """Lista todas as categorias com totais e status de limite."""
+    return svc.listar_categorias()
+
+
+@router.patch("/{nome}/limite")
+def editar_limite(nome: str, body: CategoriaEditarRequest):
+    """Altera o limite orçamentário de uma categoria."""
+    try:
+        return svc.editar_limite_categoria(nome, body.limite)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/{nome}", status_code=204)
+def excluir_categoria(nome: str):
+    """Exclui uma categoria (apenas se não houver gastos associados)."""
+    try:
+        removed = svc.excluir_categoria(nome)
+        if not removed:
+            raise HTTPException(status_code=404, detail="Categoria não encontrada.")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
