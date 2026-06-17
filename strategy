@@ -1,0 +1,96 @@
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from datetime import date
+
+from models.gasto import Gasto
+
+
+class OrdenacaoStrategy(ABC):
+    @abstractmethod
+    def ordenar(self, gastos: list[Gasto]) -> list[Gasto]:
+        ...
+
+
+class OrdenarPorValorAsc(OrdenacaoStrategy):
+    def ordenar(self, gastos: list[Gasto]) -> list[Gasto]:
+        return sorted(gastos, key=lambda g: g.valor)
+
+
+class OrdenarPorValorDesc(OrdenacaoStrategy):
+    def ordenar(self, gastos: list[Gasto]) -> list[Gasto]:
+        return sorted(gastos, key=lambda g: g.valor, reverse=True)
+
+
+class OrdenarPorDataAsc(OrdenacaoStrategy):
+    def ordenar(self, gastos: list[Gasto]) -> list[Gasto]:
+        return sorted(gastos, key=lambda g: g.data)
+
+
+class OrdenarPorDataDesc(OrdenacaoStrategy):
+    def ordenar(self, gastos: list[Gasto]) -> list[Gasto]:
+        return sorted(gastos, key=lambda g: g.data, reverse=True)
+
+
+class FiltroStrategy(ABC):
+    @abstractmethod
+    def filtrar(self, gastos: list[Gasto]) -> list[Gasto]:
+        ...
+
+
+class FiltroPorData(FiltroStrategy):
+    def __init__(self, data: date):
+        self._data = data
+
+    def filtrar(self, gastos: list[Gasto]) -> list[Gasto]:
+        return [g for g in gastos if g.data == self._data]
+
+
+class FiltroPorPeriodo(FiltroStrategy):
+    def __init__(self, inicio: date, fim: date):
+        self._inicio = inicio
+        self._fim = fim
+
+    def filtrar(self, gastos: list[Gasto]) -> list[Gasto]:
+        return [g for g in gastos if self._inicio <= g.data <= self._fim]
+
+
+class FiltroPorCategoria(FiltroStrategy):
+    def __init__(self, categoria_nome: str):
+        self._categoria = categoria_nome
+
+    def filtrar(self, gastos: list[Gasto]) -> list[Gasto]:
+        return [g for g in gastos if g.categoria_nome == self._categoria]
+
+
+class FiltroPorTipo(FiltroStrategy):
+    def __init__(self, tipo: str):
+        self._tipo = tipo  
+
+    def filtrar(self, gastos: list[Gasto]) -> list[Gasto]:
+        return [g for g in gastos if g.tipo() == self._tipo]
+
+
+class FiltroPorBusca(FiltroStrategy):
+    def __init__(self, termo: str):
+        self._termo = termo.lower()
+
+    def filtrar(self, gastos: list[Gasto]) -> list[Gasto]:
+        return [g for g in gastos if self._termo in g.descricao.lower()]
+
+
+ORDENACAO_MAP: dict[str, type[OrdenacaoStrategy]] = {
+    "valor_asc":  OrdenarPorValorAsc,
+    "valor_desc": OrdenarPorValorDesc,
+    "data_asc":   OrdenarPorDataAsc,
+    "data_desc":  OrdenarPorDataDesc,
+}
+
+
+def get_ordenacao(criterio: str) -> OrdenacaoStrategy:
+    cls = ORDENACAO_MAP.get(criterio)
+    if cls is None:
+        raise ValueError(
+            f"Critério de ordenação inválido: '{criterio}'. "
+            f"Válidos: {list(ORDENACAO_MAP)}"
+        )
+    return cls()
