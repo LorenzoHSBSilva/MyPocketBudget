@@ -1,0 +1,149 @@
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from datetime import date
+from typing import Optional
+import uuid
+
+
+# ─────────────────────────────────────────────────────────
+#  CLASSE BASE ABSTRATA
+# ─────────────────────────────────────────────────────────
+@dataclass
+class Gasto(ABC):
+
+    descricao: str
+    valor: float
+    categoria_nome: str
+    data: date
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+
+    @abstractmethod
+    def tipo(self) -> str:
+        """Retorna o tipo textual do gasto."""
+
+    @abstractmethod
+    def valor_mensal(self) -> float:
+        """Valor que impacta o orçamento mensalmente."""
+
+    @abstractmethod
+    def descricao_completa(self) -> str:
+        """Representação legível para exibição."""
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "tipo": self.tipo(),
+            "descricao": self.descricao,
+            "valor": self.valor,
+            "valor_mensal": self.valor_mensal(),
+            "categoria_nome": self.categoria_nome,
+            "data": str(self.data),
+            "descricao_completa": self.descricao_completa(),
+        }
+
+@dataclass
+class GastoNormal(Gasto):
+
+    def tipo(self) -> str:
+        return "normal"
+
+    def valor_mensal(self) -> float:
+        return self.valor
+
+    def descricao_completa(self) -> str:
+        return f"{self.descricao} — R$ {self.valor:.2f}"
+
+
+@dataclass
+class GastoExtra(Gasto):
+
+    def tipo(self) -> str:
+        return "extra"
+
+    def valor_mensal(self) -> float:
+        return self.valor
+
+    def descricao_completa(self) -> str:
+        return f"⚡ [EXTRA] {self.descricao} — R$ {self.valor:.2f}"
+
+
+@dataclass
+class GastoParcelado(Gasto):
+
+    parcelas: int = 1
+    parcelas_pagas: int = 0
+    extra: bool = False
+
+    def __post_init__(self):
+        if self.parcelas < 1:
+            raise ValueError("Número de parcelas deve ser >= 1")
+
+    @property
+    def valor_parcela(self) -> float:
+        return self.valor / self.parcelas
+
+    @property
+    def parcelas_restantes(self) -> int:
+        return max(self.parcelas - self.parcelas_pagas, 0)
+
+    @property
+    def quitado(self) -> bool:
+        return self.parcelas_pagas >= self.parcelas
+
+    def tipo(self) -> str:
+        return "extra_parcelado" if self.extra else "parcelado"
+
+    def valor_mensal(self) -> float:
+        return self.valor_parcela
+
+    def descricao_completa(self) -> str:
+        prefixo = "⚡💳" if self.extra else "💳"
+        status = "quitado" if self.quitado else f"{self.parcelas_pagas}/{self.parcelas}"
+        return (
+            f"{prefixo} {self.descricao} — "
+            f"R$ {self.valor_parcela:.2f}/mês ({status})"
+        )
+
+    def to_dict(self) -> dict:
+        base = super().to_dict()
+        base.update({
+            "parcelas": self.parcelas,
+            "parcelas_pagas": self.parcelas_pagas,
+            "parcelas_restantes": self.parcelas_restantes,
+            "valor_parcela": self.valor_parcela,
+            "quitado": self.quitado,
+            "extra": self.extra,
+        })
+        return base
+
+
+# ─────────────────────────────────────────────────────────
+#  CATEGORIA
+# ─────────────────────────────────────────────────────────
+@dataclass
+class Categoria:
+    nome: str
+    limite: float
+
+    def total_gastos(self, gastos: list[Gasto]) -> float:
+        return sum(g.valor for g in gastos if g.categoria_nome == self.nome)
+
+    def limite_excedido(self, gastos: list[Gasto]) -> bool:
+        return self.total_gastos(gastos) > self.limite
+
+    def percentual_uso(self, gastos: list[Gasto]) -> float:
+        if self.limite <= 0:
+            return 0.0
+        return min(self.total_gastos(gastos) / self.limite, 1.0)
+
+    def to_dict(self, gastos: list[Gasto]) -> dict:
+        total = self.total_gastos(gastos)
+        return {
+            "nome": self.nome,
+            "limite": self.limite,
+            "total_gasto": total,
+            "percentual_uso": self.percentual_uso(gastos),
+            "limite_excedido": self.limite_excedido(gastos),
+            "saldo_restante": max(self.limite - total, 0.0),
+        }
