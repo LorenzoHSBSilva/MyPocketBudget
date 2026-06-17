@@ -1,0 +1,28 @@
+from __future__ import annotations
+import copy
+import uuid
+from datetime import date
+
+from models.gasto import Gasto, GastoNormal, GastoExtra, GastoParcelado
+
+
+class GastoPrototype:
+
+    @staticmethod
+    def clone(original: Gasto, **overrides) -> Gasto:
+        cloned = copy.deepcopy(original)
+        cloned.id = str(uuid.uuid4())          
+       
+       
+        for key, value in overrides.items():
+            if hasattr(cloned, key):
+                setattr(cloned, key, value)
+            else:
+                raise AttributeError(
+                    f"Gasto do tipo '{type(original).__name__}' não possui atributo '{key}'"
+                )
+
+        if "data" not in overrides:
+            cloned.data = date.today()
+
+        return cloned
