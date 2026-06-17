@@ -1,0 +1,146 @@
+from __future__ import annotations
+from datetime import date
+from typing import Optional
+
+from fastapi import APIRouter, HTTPException, Query
+
+from routers.schemas import GastoCriarRequest, GastoEditarRequest, GastoClonarRequest, CriterioOrdenacao
+import services.gasto_service as svc
+
+router = APIRouter(prefix="/gastos", tags=["Gastos"])
+
+
+# ── POST /gastos ──────────────────────────────────────────
+@router.post("/", status_code=201)
+def registrar_gasto(body: GastoCriarRequest):
+    """Registra um novo gasto (normal, extra, parcelado ou extra_parcelado)."""
+    try:
+        result = svc.registrar_gasto(
+            tipo=body.tipo,
+            descricao=body.descricao,
+            valor=body.valor,
+            categoria_nome=body.categoria_nome,
+            data=body.data,
+            parcelas=body.parcelas,
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# ── GET /gastos ───────────────────────────────────────────
+@router.get("/")
+def listar_gastos(
+    ordenar: Optional[CriterioOrdenacao] = Query(
+        None, description="Critério: valor_asc | valor_desc | data_asc | data_desc"
+    )
+):
+    """Lista todos os gastos, com ordenação opcional."""
+    try:
+        return svc.listar_gastos(ordenar)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# ── GET /gastos/buscar ────────────────────────────────────
+@router.get("/buscar")
+def buscar_gastos(termo: str = Query(..., min_length=1)):
+    """Busca gastos por termo na descrição."""
+    return svc.buscar_gastos(termo)
+
+
+# ── GET /gastos/filtrar/data ──────────────────────────────
+@router.get("/filtrar/data")
+def filtrar_por_data(data: date = Query(..., description="AAAA-MM-DD")):
+    """Retorna gastos de uma data específica."""
+    return svc.filtrar_por_data(data)
+
+
+# ── GET /gastos/filtrar/periodo ───────────────────────────
+@router.get("/filtrar/periodo")
+def filtrar_por_periodo(
+    inicio: date = Query(..., description="Data de início AAAA-MM-DD"),
+    fim: date = Query(..., description="Data de fim AAAA-MM-DD"),
+):
+    """Retorna gastos dentro de um período."""
+    if inicio > fim:
+        raise HTTPException(status_code=400, detail="'inicio' deve ser anterior a 'fim'.")
+    return svc.filtrar_por_periodo(inicio, fim)
+
+
+# ── GET /gastos/filtrar/categoria ─────────────────────────
+@router.get("/filtrar/categoria/{categoria_nome}")
+def filtrar_por_categoria(categoria_nome: str):
+    """Retorna gastos de uma categoria específica."""
+    return svc.filtrar_por_categoria(categoria_nome)
+
+
+# ── GET /gastos/filtrar/tipo ──────────────────────────────
+@router.get("/filtrar/tipo/{tipo}")
+def filtrar_por_tipo(tipo: str):
+    """Retorna gastos pelo tipo: normal | extra | parcelado | extra_parcelado."""
+    return svc.filtrar_por_tipo(tipo)
+
+
+# ── GET /gastos/{id} ──────────────────────────────────────
+@router.get("/{gasto_id}")
+def obter_gasto(gasto_id: str):
+    """Retorna um gasto pelo ID."""
+    try:
+        return svc._gerenciador.buscar_gasto(gasto_id).to_dict()
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+# ── PATCH /gastos/{id} ────────────────────────────────────
+@router.patch("/{gasto_id}")
+def editar_gasto(gasto_id: str, body: GastoEditarRequest):
+    """Edita descrição e/ou valor de um gasto."""
+    try:
+        return svc.editar_gasto(gasto_id, body.descricao, body.valor)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+# ── DELETE /gastos/{id} ───────────────────────────────────
+@router.delete("/{gasto_id}", status_code=204)
+def remover_gasto(gasto_id: str):
+    """Remove um gasto pelo ID."""
+    removed = svc.remover_gasto(gasto_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Gasto não encontrado.")
+
+
+# ── POST /gastos/{id}/clonar ──────────────────────────────
+@router.post("/{gasto_id}/clonar", status_code=201)
+def clonar_gasto(gasto_id: str, body: GastoClonarRequest):
+    """Clona um gasto existente (Padrão Prototype), sobrescrevendo campos opcionais."""
+    try:
+        overrides = {k: v for k, v in body.model_dump().items() if v is not None}
+        return svc.clonar_gasto(gasto_id, **overrides)
+    except (KeyError, AttributeError) as e:
+        raise HTTPException(status_code=404 if isinstance(e, KeyError) else 400, detail=str(e))
+
+
+# ── POST /gastos/{id}/quitar-parcela ─────────────────────
+@router.post("/{gasto_id}/quitar-parcela")
+def quitar_parcela(gasto_id: str):
+    """Quita a próxima parcela de um gasto parcelado."""
+    try:
+        return svc.quitar_parcela(gasto_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except (TypeError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# ── POST /gastos/{id}/quitar-todas ───────────────────────
+@router.post("/{gasto_id}/quitar-todas")
+def quitar_todas_parcelas(gasto_id: str):
+    """Quita todas as parcelas restantes de um gasto parcelado."""
+    try:
+        return svc.quitar_todas_parcelas(gasto_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except (TypeError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
