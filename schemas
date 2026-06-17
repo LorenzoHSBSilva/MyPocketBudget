@@ -1,0 +1,57 @@
+from __future__ import annotations
+from datetime import date
+from typing import Literal, Optional
+from pydantic import BaseModel, Field, field_validator
+
+
+# ─────────────────────────────────────────────────────────
+#  GASTOS
+# ─────────────────────────────────────────────────────────
+TipoGasto = Literal["normal", "extra", "parcelado", "extra_parcelado"]
+
+
+class GastoCriarRequest(BaseModel):
+    tipo: TipoGasto = "normal"
+    descricao: str = Field(..., min_length=1, max_length=200)
+    valor: float = Field(..., gt=0)
+    categoria_nome: str = Field(..., min_length=1)
+    data: date = Field(default_factory=date.today)
+    parcelas: int = Field(default=1, ge=1, le=60)
+
+    @field_validator("parcelas")
+    @classmethod
+    def parcelas_para_nao_parcelados(cls, v, info):
+        tipo = info.data.get("tipo", "normal")
+        if tipo not in ("parcelado", "extra_parcelado") and v != 1:
+            raise ValueError("Parcelas > 1 apenas para gastos parcelados.")
+        return v
+
+
+class GastoEditarRequest(BaseModel):
+    descricao: Optional[str] = Field(None, min_length=1, max_length=200)
+    valor: Optional[float] = Field(None, gt=0)
+
+
+class GastoClonarRequest(BaseModel):
+    descricao: Optional[str] = None
+    valor: Optional[float] = Field(None, gt=0)
+    categoria_nome: Optional[str] = None
+    data: Optional[date] = None
+
+
+# ─────────────────────────────────────────────────────────
+#  CATEGORIAS
+# ─────────────────────────────────────────────────────────
+class CategoriaCriarRequest(BaseModel):
+    nome: str = Field(..., min_length=1, max_length=100)
+    limite: float = Field(..., gt=0)
+
+
+class CategoriaEditarRequest(BaseModel):
+    limite: float = Field(..., gt=0)
+
+
+# ─────────────────────────────────────────────────────────
+#  FILTROS / BUSCA
+# ─────────────────────────────────────────────────────────
+CriterioOrdenacao = Literal["valor_asc", "valor_desc", "data_asc", "data_desc"]
