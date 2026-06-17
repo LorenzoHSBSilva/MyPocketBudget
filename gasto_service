@@ -1,0 +1,184 @@
+from __future__ import annotations
+from datetime import date
+
+from models.gasto import Gasto, GastoNormal, GastoExtra, GastoParcelado
+from core.bridge import GerenciadorBase, RepositorioGastosMemoria, RepositorioCategoriasMemoria
+from core.strategy import get_ordenacao, FiltroPorBusca, FiltroPorData, FiltroPorPeriodo, FiltroPorCategoria, FiltroPorTipo
+from core.prototype import GastoPrototype
+
+
+# ─────────────────────────────────────────────────────────
+#  INSTÂNCIA SINGLETON DO GERENCIADOR (estado em memória)
+# ─────────────────────────────────────────────────────────
+_gerenciador = GerenciadorBase(
+    repo_gastos=RepositorioGastosMemoria(),
+    repo_categorias=RepositorioCategoriasMemoria(),
+)
+
+
+def get_gerenciador() -> GerenciadorBase:
+    return _gerenciador
+
+
+# ─────────────────────────────────────────────────────────
+#  FÁBRICA DE GASTOS
+# ─────────────────────────────────────────────────────────
+def criar_gasto_objeto(
+    tipo: str,
+    descricao: str,
+    valor: float,
+    categoria_nome: str,
+    data: date,
+    parcelas: int = 1,
+    extra: bool = False,
+) -> Gasto:
+
+    if tipo == "extra":
+        return GastoExtra(descricao=descricao, valor=valor,
+                          categoria_nome=categoria_nome, data=data)
+    if tipo in ("parcelado", "extra_parcelado"):
+        return GastoParcelado(descricao=descricao, valor=valor,
+                              categoria_nome=categoria_nome, data=data,
+                              parcelas=parcelas,
+                              extra=(tipo == "extra_parcelado"))
+    # default: normal
+    return GastoNormal(descricao=descricao, valor=valor,
+                       categoria_nome=categoria_nome, data=data)
+
+
+# ─────────────────────────────────────────────────────────
+#  OPERAÇÕES DE GASTOS
+# ─────────────────────────────────────────────────────────
+def registrar_gasto(
+    tipo: str,
+    descricao: str,
+    valor: float,
+    categoria_nome: str,
+    data: date,
+    parcelas: int = 1,
+) -> dict:
+    gasto = criar_gasto_objeto(tipo, descricao, valor, categoria_nome, data, parcelas)
+    return _gerenciador.adicionar_gasto(gasto)
+
+
+def listar_gastos(criterio_ordenacao: str | None = None) -> list[dict]:
+    gastos = _gerenciador.get_todos_gastos()
+    if criterio_ordenacao:
+        strategy = get_ordenacao(criterio_ordenacao)
+        gastos = strategy.ordenar(gastos)
+    return [g.to_dict() for g in gastos]
+
+
+def buscar_gastos(termo: str) -> list[dict]:
+    gastos = _gerenciador.get_todos_gastos()
+    filtro = FiltroPorBusca(termo)
+    return [g.to_dict() for g in filtro.filtrar(gastos)]
+
+
+def filtrar_por_data(data: date) -> list[dict]:
+    gastos = _gerenciador.get_todos_gastos()
+    filtro = FiltroPorData(data)
+    return [g.to_dict() for g in filtro.filtrar(gastos)]
+
+
+def filtrar_por_periodo(inicio: date, fim: date) -> list[dict]:
+    gastos = _gerenciador.get_todos_gastos()
+    filtro = FiltroPorPeriodo(inicio, fim)
+    return [g.to_dict() for g in filtro.filtrar(gastos)]
+
+
+def filtrar_por_categoria(categoria_nome: str) -> list[dict]:
+    gastos = _gerenciador.get_todos_gastos()
+    filtro = FiltroPorCategoria(categoria_nome)
+    return [g.to_dict() for g in filtro.filtrar(gastos)]
+
+
+def filtrar_por_tipo(tipo: str) -> list[dict]:
+    gastos = _gerenciador.get_todos_gastos()
+    filtro = FiltroPorTipo(tipo)
+    return [g.to_dict() for g in filtro.filtrar(gastos)]
+
+
+def editar_gasto(gasto_id: str, descricao: str | None, valor: float | None) -> dict:
+    return _gerenciador.editar_gasto(gasto_id, descricao, valor)
+
+
+def remover_gasto(gasto_id: str) -> bool:
+    return _gerenciador.remover_gasto(gasto_id)
+
+
+def clonar_gasto(gasto_id: str, **overrides) -> dict:
+    """Usa o padrão Prototype para duplicar um gasto existente."""
+    original = _gerenciador.buscar_gasto(gasto_id)
+    clone = GastoPrototype.clone(original, **overrides)
+    return _gerenciador.adicionar_gasto(clone)
+
+
+# ─────────────────────────────────────────────────────────
+#  OPERAÇÕES DE PARCELAS
+# ─────────────────────────────────────────────────────────
+def quitar_parcela(gasto_id: str) -> dict:
+    gasto = _gerenciador.buscar_gasto(gasto_id)
+    if not isinstance(gasto, GastoParcelado):
+        raise TypeError("Este gasto não é parcelado.")
+    if gasto.quitado:
+        raise ValueError("Todas as parcelas já foram quitadas.")
+    gasto.parcelas_pagas += 1
+    _gerenciador._gastos.atualizar(gasto)
+    return gasto.to_dict()
+
+
+def quitar_todas_parcelas(gasto_id: str) -> dict:
+    gasto = _gerenciador.buscar_gasto(gasto_id)
+    if not isinstance(gasto, GastoParcelado):
+        raise TypeError("Este gasto não é parcelado.")
+    gasto.parcelas_pagas = gasto.parcelas
+    _gerenciador._gastos.atualizar(gasto)
+    return gasto.to_dict()
+
+
+# ─────────────────────────────────────────────────────────
+#  OPERAÇÕES DE CATEGORIAS
+# ─────────────────────────────────────────────────────────
+def criar_categoria(nome: str, limite: float) -> dict:
+    return _gerenciador.criar_categoria(nome, limite)
+
+
+def listar_categorias() -> list[dict]:
+    return _gerenciador.listar_categorias()
+
+
+def editar_limite_categoria(nome: str, novo_limite: float) -> dict:
+    return _gerenciador.editar_limite_categoria(nome, novo_limite)
+
+
+def excluir_categoria(nome: str) -> bool:
+    return _gerenciador.excluir_categoria(nome)
+
+
+# ─────────────────────────────────────────────────────────
+#  DASHBOARD
+# ─────────────────────────────────────────────────────────
+def get_dashboard() -> dict:
+    gastos = _gerenciador.get_todos_gastos()
+    categorias = _gerenciador.listar_categorias()
+
+    total_gasto = sum(g.valor for g in gastos)
+    qtd_gastos = len(gastos)
+    qtd_extras = sum(1 for g in gastos if g.tipo() in ("extra", "extra_parcelado"))
+    cats_excedidas = [c for c in categorias if c["limite_excedido"]]
+
+    parcelados = [g.to_dict() for g in gastos if isinstance(g, GastoParcelado)]
+
+    return {
+        "total_gasto": total_gasto,
+        "quantidade_gastos": qtd_gastos,
+        "gastos_extras": qtd_extras,
+        "categorias_excedidas": len(cats_excedidas),
+        "categorias": categorias,
+        "parcelados_em_aberto": [p for p in parcelados if not p.get("quitado")],
+        "alertas": [
+            f"⚠️ Limite excedido na categoria '{c['nome']}'"
+            for c in cats_excedidas
+        ],
+    }
