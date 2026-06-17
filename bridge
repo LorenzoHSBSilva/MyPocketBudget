@@ -1,0 +1,167 @@
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from models.gasto import Gasto, Categoria
+
+
+class RepositorioGastosBase(ABC):
+
+    @abstractmethod
+    def salvar(self, gasto: Gasto) -> None: ...
+
+    @abstractmethod
+    def buscar_por_id(self, gasto_id: str) -> Gasto | None: ...
+
+    @abstractmethod
+    def listar_todos(self) -> list[Gasto]: ...
+
+    @abstractmethod
+    def atualizar(self, gasto: Gasto) -> None: ...
+
+    @abstractmethod
+    def deletar(self, gasto_id: str) -> bool: ...
+
+
+class RepositorioCategoriasBase(ABC):
+
+    @abstractmethod
+    def salvar(self, categoria: Categoria) -> None: ...
+
+    @abstractmethod
+    def buscar(self, nome: str) -> Categoria | None: ...
+
+    @abstractmethod
+    def listar_todas(self) -> list[Categoria]: ...
+
+    @abstractmethod
+    def atualizar(self, categoria: Categoria) -> None: ...
+
+    @abstractmethod
+    def deletar(self, nome: str) -> bool: ...
+
+
+class RepositorioGastosMemoria(RepositorioGastosBase):
+
+    def __init__(self):
+        self._store: dict[str, Gasto] = {}
+
+    def salvar(self, gasto: Gasto) -> None:
+        self._store[gasto.id] = gasto
+
+    def buscar_por_id(self, gasto_id: str) -> Gasto | None:
+        return self._store.get(gasto_id)
+
+    def listar_todos(self) -> list[Gasto]:
+        return list(self._store.values())
+
+    def atualizar(self, gasto: Gasto) -> None:
+        if gasto.id not in self._store:
+            raise KeyError(f"Gasto '{gasto.id}' não encontrado.")
+        self._store[gasto.id] = gasto
+
+    def deletar(self, gasto_id: str) -> bool:
+        return self._store.pop(gasto_id, None) is not None
+
+
+class RepositorioCategoriasMemoria(RepositorioCategoriasBase):
+
+    def __init__(self):
+        self._store: dict[str, Categoria] = {}
+        # Categorias padrão
+        for nome, limite in [("Alimentação", 800.0), ("Transporte", 300.0), ("Lazer", 200.0)]:
+            self._store[nome] = Categoria(nome=nome, limite=limite)
+
+    def salvar(self, categoria: Categoria) -> None:
+        if categoria.nome in self._store:
+            raise ValueError(f"Categoria '{categoria.nome}' já existe.")
+        self._store[categoria.nome] = categoria
+
+    def buscar(self, nome: str) -> Categoria | None:
+        return self._store.get(nome)
+
+    def listar_todas(self) -> list[Categoria]:
+        return list(self._store.values())
+
+    def atualizar(self, categoria: Categoria) -> None:
+        if categoria.nome not in self._store:
+            raise KeyError(f"Categoria '{categoria.nome}' não encontrada.")
+        self._store[categoria.nome] = categoria
+
+    def deletar(self, nome: str) -> bool:
+        return self._store.pop(nome, None) is not None
+
+
+class GerenciadorBase:
+    """
+    Abstração do Bridge. Depende de RepositorioBase,
+    não de implementações concretas.
+    """
+
+    def __init__(
+        self,
+        repo_gastos: RepositorioGastosBase,
+        repo_categorias: RepositorioCategoriasBase,
+    ):
+        self._gastos = repo_gastos
+        self._cats = repo_categorias
+
+    # ── Gastos ───────────────────────────────────────────
+    def adicionar_gasto(self, gasto: Gasto) -> dict:
+        cat = self._cats.buscar(gasto.categoria_nome)
+        if cat is None:
+            raise ValueError(f"Categoria '{gasto.categoria_nome}' não encontrada.")
+        self._gastos.salvar(gasto)
+        todos = self._gastos.listar_todos()
+        alerta = cat.limite_excedido(todos)
+        return {"gasto": gasto.to_dict(), "alerta_limite": alerta}
+
+    def listar_gastos(self) -> list[dict]:
+        return [g.to_dict() for g in self._gastos.listar_todos()]
+
+    def buscar_gasto(self, gasto_id: str) -> Gasto:
+        g = self._gastos.buscar_por_id(gasto_id)
+        if g is None:
+            raise KeyError(f"Gasto '{gasto_id}' não encontrado.")
+        return g
+
+    def editar_gasto(self, gasto_id: str, descricao: str | None, valor: float | None) -> dict:
+        g = self.buscar_gasto(gasto_id)
+        if descricao:
+            g.descricao = descricao
+        if valor is not None:
+            g.valor = valor
+        self._gastos.atualizar(g)
+        return g.to_dict()
+
+    def remover_gasto(self, gasto_id: str) -> bool:
+        return self._gastos.deletar(gasto_id)
+
+    def get_todos_gastos(self) -> list[Gasto]:
+        return self._gastos.listar_todos()
+
+    # ── Categorias ────────────────────────────────────────
+    def criar_categoria(self, nome: str, limite: float) -> dict:
+        cat = Categoria(nome=nome, limite=limite)
+        self._cats.salvar(cat)
+        return cat.to_dict(self._gastos.listar_todos())
+
+    def listar_categorias(self) -> list[dict]:
+        todos = self._gastos.listar_todos()
+        return [c.to_dict(todos) for c in self._cats.listar_todas()]
+
+    def editar_limite_categoria(self, nome: str, novo_limite: float) -> dict:
+        cat = self._cats.buscar(nome)
+        if cat is None:
+            raise KeyError(f"Categoria '{nome}' não encontrada.")
+        cat.limite = novo_limite
+        self._cats.atualizar(cat)
+        return cat.to_dict(self._gastos.listar_todos())
+
+    def excluir_categoria(self, nome: str) -> bool:
+        todos = self._gastos.listar_todos()
+        tem_gastos = any(g.categoria_nome == nome for g in todos)
+        if tem_gastos:
+            raise ValueError("Não é possível excluir uma categoria com gastos registrados.")
+        return self._cats.deletar(nome)
+
+    def categoria_existe(self, nome: str) -> bool:
+        return self._cats.buscar(nome) is not None
